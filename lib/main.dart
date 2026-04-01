@@ -1360,7 +1360,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   static const _adminEmail = 'sin629370@gmail.com';
-  static const _adminPw = 'jikosh12@';
+  static const _adminPw = '0310';
   // Gmail 앱 비밀번호 (Google 계정 → 보안 → 앱 비밀번호)
   static const _senderAppPw = 'YOUR_GMAIL_APP_PASSWORD';
 
