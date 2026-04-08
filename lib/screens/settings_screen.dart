@@ -103,12 +103,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(width: 8),
           Text('공장 초기화', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.t1)),
         ]),
-        content: Text('디바이스의 모든 설정이 초기화됩니다.\n이 작업은 되돌릴 수 없습니다.', style: TextStyle(fontSize: 13, fontFamily: 'monospace', color: AppColors.t2, height: 1.6)),
+        content: Text('디바이스의 모든 설정이 초기화됩니다.\n이 작업은 되돌릴 수 없습니다.', style: TextStyle(fontSize: 13, color: AppColors.t2, height: 1.6)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('취소', style: TextStyle(color: AppColors.t3, fontFamily: 'monospace'))),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('취소', style: TextStyle(color: AppColors.t3))),
           TextButton(
             onPressed: () { Navigator.pop(ctx); /* TODO: 실제 초기화 명령 전송 */ },
-            child: Text('초기화', style: TextStyle(color: AppColors.gold, fontFamily: 'monospace', fontWeight: FontWeight.w700)),
+            child: Text('초기화', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -153,8 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         builder: (ctx, setModal) => Container(
           decoration: BoxDecoration(
             color: AppColors.panel,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: Border.all(color: AppColors.border),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -162,12 +161,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
             Row(children: [
               Container(width: 36, height: 36,
-                decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
                 child: Icon(Icons.psychology_rounded, size: 18, color: AppColors.accent)),
               const SizedBox(width: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('퍼비 성격 선택', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.t1)),
-                Text('AI 의 말투와 응답 스타일', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
+                Text('AI 의 말투와 응답 스타일', style: TextStyle(fontSize: 10, color: AppColors.t3)),
               ]),
             ]),
             const SizedBox(height: 20),
@@ -197,10 +196,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: selected ? color : AppColors.t2)),
                       const SizedBox(height: 2),
-                      Text(desc, style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
+                      Text(desc, style: TextStyle(fontSize: 10, color: AppColors.t3)),
                     ])),
-                    if (selected)
-                      Icon(Icons.check_circle_rounded, size: 20, color: color),
+                    if (selected) Icon(Icons.check_circle_rounded, size: 20, color: color),
                   ]),
                 ),
               );
@@ -244,17 +242,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.panel,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('AI 이름 설정', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.t1)),
+        title: Text('내 이름 설정', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.t1)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('"[이름]야" 라고 부르면 활성화돼요.',
-            style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.t3)),
+          Text('홈 화면 인사말에 표시될 이름을 입력하세요.',
+            style: TextStyle(fontSize: 11, color: AppColors.t3)),
           const SizedBox(height: 14),
           TextField(
             controller: ctrl, autofocus: true, maxLength: 10,
-            style: TextStyle(fontSize: 16, fontFamily: 'monospace', color: AppColors.t1),
+            style: TextStyle(fontSize: 16, color: AppColors.t1),
             decoration: InputDecoration(
               hintText: '이름을 입력하세요',
-              hintStyle: TextStyle(color: AppColors.t3, fontFamily: 'monospace'),
+              hintStyle: TextStyle(color: AppColors.t3),
               counterStyle: TextStyle(color: AppColors.t3, fontSize: 10),
               enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
               focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent)),
@@ -275,325 +273,237 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ─────────────────────────── build ────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      Container(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-        decoration: BoxDecoration(color: AppColors.panel, border: Border(bottom: BorderSide(color: AppColors.border, width: 1))),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('설정', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.t1)),
-          GestureDetector(
-            onTap: widget.onLogout,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.red.withValues(alpha: 0.35)),
-              ),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.logout_rounded, size: 12, color: AppColors.red),
-                const SizedBox(width: 4),
-                Text('로그아웃', style: TextStyle(fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.red)),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-      Expanded(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(children: [
-
-        // ── 디바이스 연결
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [AppColors.green.withValues(alpha: 0.08), AppColors.green.withValues(alpha: 0.02)]),
-            borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.green.withValues(alpha: 0.2))),
-          child: Column(children: [
-            Row(children: [
-              Container(width: 42, height: 42,
-                decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.green.withValues(alpha: 0.2))),
-                child: const Icon(Icons.monitor_rounded, size: 22, color: AppColors.green)),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('DEVICE', style: TextStyle(fontSize: 9, fontFamily: 'monospace', color: AppColors.t3, letterSpacing: 1.5)),
-                const SizedBox(height: 4),
-                Text('Persona Frame', style: TextStyle(fontSize: 14, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.t1)),
-                const SizedBox(height: 3),
-                Text('192.168.0.14 · 동기화 중', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
-              ])),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.green.withValues(alpha: 0.25))),
-                child: Text('Connected', style: TextStyle(fontSize: 9, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.green, letterSpacing: 1)),
-              ),
-            ]),
-            const SizedBox(height: 12),
-            ClipRRect(borderRadius: BorderRadius.circular(2),
-              child: const LinearProgressIndicator(value: 0.7, minHeight: 3, backgroundColor: Color(0x19000000), color: AppColors.green)),
-          ])),
-        const SizedBox(height: 12),
-
-        // ── 다크 / 라이트 모드 토글
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Row(children: [
-            Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(10)),
-              child: Icon(widget.isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded, size: 18, color: AppColors.accent)),
-            const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('테마', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.t1)),
-              const SizedBox(height: 3),
-              Text(widget.isDark ? '어두운 모드 사용 중' : '밝은 모드 사용 중', style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.t3)),
-            ])),
-            Switch(value: widget.isDark, onChanged: widget.onDarkToggle, activeColor: AppColors.accent),
-          ])),
-        const SizedBox(height: 12),
-
-        // ── 퍼비 성격 설정
-        GestureDetector(
-          onTap: _showPersonalityModal,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-            child: Row(children: [
-              Container(width: 36, height: 36,
-                decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.psychology_rounded, size: 18, color: AppColors.accent)),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('퍼비 성격', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.t1)),
-                Text('AI 의 말투와 응답 스타일을 설정해요', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
-              ])),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.border)),
-                child: Text(_personality, style: TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.accent)),
-              ),
-              const SizedBox(width: 6),
-              Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
-            ]),
-          ),
+      // ── 헤더
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text('설정', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.t1)),
         ),
-        const SizedBox(height: 12),
+      ),
 
-        // ── 절전 시간 설정
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('절전 시간 설정', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.t1)),
-            const SizedBox(height: 8),
-            Text('설정 시간 동안 Persona Frame이 절전 모드로 자동 전환됩니다.', style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.t3)),
-            const SizedBox(height: 12),
-            Row(children: [
-              _timeBox('시작', _fmt(sleepStart), () => _pickSleepTime(true)),
-              Padding(padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text('—', style: TextStyle(fontSize: 16, fontFamily: 'monospace', color: AppColors.t3))),
-              _timeBox('종료', _fmt(sleepEnd), () => _pickSleepTime(false)),
-            ]),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('절전 모드 활성화', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.t1)),
-                const SizedBox(height: 3),
-                Text('설정 시간에 자동 전환', style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.t3)),
+      Expanded(child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+          // ══ 프로필 섹션
+          _sectionLabel('프로필'),
+          _card([
+            _row(
+              iconBg: AppColors.accent,
+              icon: Icons.person_rounded,
+              title: '내 이름',
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(widget.aiName, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.t2)),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
               ]),
-              Switch(value: sleepEnabled, onChanged: (v) => setState(() => sleepEnabled = v), activeColor: AppColors.accent),
-            ]),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.monitor_rounded, size: 15, color: AppColors.t2),
-                label: Text('화면 끄기', style: TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.t2, letterSpacing: 1)),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  side: BorderSide(color: AppColors.border),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
+              onTap: _showNameDialog,
             ),
-          ])),
-        const SizedBox(height: 12),
+            _divider(),
+            _row(
+              iconBg: const Color(0xFF8B5CF6),
+              icon: Icons.psychology_rounded,
+              title: '퍼비 성격',
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(12)),
+                  child: Text(_personality, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.accent)),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
+              ]),
+              onTap: _showPersonalityModal,
+            ),
+            _divider(),
+            _row(
+              iconBg: const Color(0xFF64748B),
+              icon: widget.isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              title: widget.isDark ? '다크 모드' : '라이트 모드',
+              trailing: Switch(value: widget.isDark, onChanged: widget.onDarkToggle, activeColor: AppColors.accent),
+            ),
+          ]),
+          const SizedBox(height: 20),
 
-        // ── 아침 브리핑
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(width: 36, height: 36,
-                decoration: BoxDecoration(color: AppColors.gold.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.wb_twilight_rounded, size: 18, color: AppColors.gold)),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('아침 브리핑', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.t1)),
-                Text('설정 시간에 오늘 일정을 요약해드려요', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
-              ])),
-              Switch(
+          // ══ 시간 설정 섹션
+          _sectionLabel('시간 설정'),
+          _card([
+            // 절전 시간 — pill 버튼 2개
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Row(children: [
+                Container(
+                  width: 32, height: 32,
+                  decoration: BoxDecoration(color: const Color(0xFF0EA5E9).withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.bedtime_rounded, size: 17, color: Color(0xFF0EA5E9)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('절전 시간', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.t1)),
+                  Text('설정 시간에 액자가 절전으로 전환됩니다', style: TextStyle(fontSize: 11, color: AppColors.t3)),
+                ])),
+                Switch(value: sleepEnabled, onChanged: (v) => setState(() => sleepEnabled = v), activeColor: AppColors.accent),
+              ]),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Row(children: [
+                _sleepPill('시작', _fmt(sleepStart), () => _pickSleepTime(true)),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text('→', style: TextStyle(fontSize: 16, color: AppColors.t3))),
+                _sleepPill('종료', _fmt(sleepEnd), () => _pickSleepTime(false)),
+              ]),
+            ),
+            _divider(),
+            // 아침 브리핑
+            _row(
+              iconBg: AppColors.gold,
+              icon: Icons.wb_twilight_rounded,
+              title: '아침 브리핑',
+              subtitle: '오늘 일정을 요약해드려요',
+              trailing: Switch(
                 value: _briefingEnabled,
                 onChanged: (v) { setState(() => _briefingEnabled = v); _saveBriefing(); },
                 activeColor: AppColors.accent,
               ),
-            ]),
+            ),
             if (_briefingEnabled) ...[
-              const SizedBox(height: 14),
-              const Divider(height: 1),
-              const SizedBox(height: 14),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('브리핑 시간', style: TextStyle(fontSize: 12, fontFamily: 'monospace', color: AppColors.t2)),
-                GestureDetector(
-                  onTap: _pickBriefingTime,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(_fmt(_briefingTime), style: const TextStyle(fontSize: 18, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.accent, letterSpacing: 1)),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.edit_rounded, size: 12, color: AppColors.accent),
-                    ]),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(60, 0, 16, 14),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('브리핑 시간', style: TextStyle(fontSize: 12, color: AppColors.t3)),
+                  GestureDetector(
+                    onTap: _pickBriefingTime,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                      decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(12)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text(_fmt(_briefingTime), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.accent, letterSpacing: 1)),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.edit_rounded, size: 12, color: AppColors.accent),
+                      ]),
+                    ),
                   ),
-                ),
-              ]),
+                ]),
+              ),
             ],
-          ]),
-        ),
-        const SizedBox(height: 12),
-
-        // ── 회고 시간
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(width: 36, height: 36,
-                decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-                child: Icon(Icons.auto_stories_rounded, size: 18, color: AppColors.accent)),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('회고 시간', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.t1)),
-                Text('설정 시간에 하루를 돌아보는 알림을 드려요', style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
-              ])),
-              Switch(
+            _divider(),
+            // 회고 시간
+            _row(
+              iconBg: const Color(0xFF6B5CE7),
+              icon: Icons.auto_stories_rounded,
+              title: '회고 시간',
+              subtitle: '하루를 돌아보는 알림을 드려요',
+              trailing: Switch(
                 value: _retroEnabled,
                 onChanged: (v) { setState(() => _retroEnabled = v); _saveRetro(); },
                 activeColor: AppColors.accent,
               ),
-            ]),
+            ),
             if (_retroEnabled) ...[
-              const SizedBox(height: 14),
-              const Divider(height: 1),
-              const SizedBox(height: 14),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('회고 시간', style: TextStyle(fontSize: 12, fontFamily: 'monospace', color: AppColors.t2)),
-                GestureDetector(
-                  onTap: _pickRetroTime,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Text(_fmt(_retroTime), style: const TextStyle(fontSize: 18, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.accent, letterSpacing: 1)),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.edit_rounded, size: 12, color: AppColors.accent),
-                    ]),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(60, 0, 16, 14),
+                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('회고 시간', style: TextStyle(fontSize: 12, color: AppColors.t3)),
+                  GestureDetector(
+                    onTap: _pickRetroTime,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                      decoration: BoxDecoration(color: AppColors.accent.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(12)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text(_fmt(_retroTime), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.accent, letterSpacing: 1)),
+                        const SizedBox(width: 6),
+                        const Icon(Icons.edit_rounded, size: 12, color: AppColors.accent),
+                      ]),
+                    ),
                   ),
-                ),
-              ]),
+                ]),
+              ),
             ],
           ]),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
-        // ── 볼륨 / 밝기
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Column(children: [
+          // ══ 알림 섹션
+          _sectionLabel('알림'),
+          _card([
+            _row(
+              iconBg: const Color(0xFFEF4444),
+              icon: Icons.notifications_rounded,
+              title: '모바일 알림',
+              subtitle: '일정 시작 10분 전 알림',
+              trailing: Switch(value: schedAlert, onChanged: (v) => setState(() => schedAlert = v), activeColor: AppColors.accent),
+            ),
+          ]),
+          const SizedBox(height: 20),
+
+          // ══ 디스플레이 섹션
+          _sectionLabel('디스플레이'),
+          _card([
             _sliderRow(
+              iconBg: const Color(0xFF6B5CE7),
               icon: Icons.volume_up_rounded,
               label: '볼륨',
               value: _volume,
               color: AppColors.accent,
               onChanged: (v) { setState(() => _volume = v); _saveDisplay(); },
             ),
-            const SizedBox(height: 8),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
+            _divider(),
             _sliderRow(
+              iconBg: AppColors.gold,
               icon: Icons.brightness_6_rounded,
               label: '밝기',
               value: _brightness,
               color: AppColors.gold,
               onChanged: (v) { setState(() => _brightness = v); _saveDisplay(); },
             ),
+            _divider(),
+            _row(
+              iconBg: const Color(0xFF475569),
+              icon: Icons.monitor_rounded,
+              title: '화면 끄기',
+              subtitle: '액자 화면 즉시 끄기',
+              trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
+              onTap: () {},
+            ),
           ]),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 20),
 
-        // ── 알림 설정
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('알림 설정', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.t1)),
-            const SizedBox(height: 12),
-            _alertRow(Icons.notifications_rounded, '모바일 알림', '시작 10분 전', schedAlert, (v) => setState(() => schedAlert = v)),
-          ])),
-        const SizedBox(height: 12),
-
-        // ── 디바이스 관리
-        Container(padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(color: AppColors.panel, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text('디바이스 관리', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.t1)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _isConnected ? AppColors.green.withValues(alpha: 0.12) : AppColors.t3.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: _isConnected ? AppColors.green.withValues(alpha: 0.3) : AppColors.border),
-                ),
-                child: Text(_isConnected ? '연결됨' : '미연결', style: TextStyle(fontSize: 9, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: _isConnected ? AppColors.green : AppColors.t3, letterSpacing: 1)),
-              ),
-            ]),
-            const SizedBox(height: 14),
-            const Divider(height: 1),
-            const SizedBox(height: 14),
-            if (_isConnected) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.green.withValues(alpha: 0.2))),
+          // ══ 앱 정보 섹션
+          _sectionLabel('앱 정보'),
+          _card([
+            // 디바이스 연결 상태
+            _row(
+              iconBg: _isConnected ? AppColors.green : const Color(0xFF94A3B8),
+              icon: Icons.router_rounded,
+              title: '디바이스 연결',
+              subtitle: _isConnected ? _deviceIp : '연결되지 않음',
+              trailing: _isConnected
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(12)),
+                      child: Text('연결됨', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.green)),
+                    )
+                  : Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
+            ),
+            // IP 입력 (미연결 시)
+            if (!_isConnected)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                 child: Row(children: [
-                  Icon(Icons.monitor_rounded, size: 20, color: AppColors.green),
-                  const SizedBox(width: 10),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Persona Frame', style: TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.t1)),
-                    const SizedBox(height: 2),
-                    Text(_deviceIp, style: TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.t3)),
-                  ])),
-                  Container(width: 8, height: 8, decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle)),
-                ]),
-              ),
-              const SizedBox(height: 12),
-              _btn('공장 초기화', AppColors.gold, AppColors.gold.withValues(alpha: 0.25), _showFactoryResetDialog),
-              const SizedBox(height: 8),
-              _btn('연결 해제', AppColors.red, AppColors.red.withValues(alpha: 0.25), _disconnectDevice),
-            ] else ...[
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('IP 주소', style: TextStyle(fontSize: 9, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.t3, letterSpacing: 2)),
-                const SizedBox(height: 7),
-                Row(children: [
                   Expanded(
                     child: TextField(
                       controller: _ipCtrl,
                       keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(fontSize: 14, fontFamily: 'monospace', color: AppColors.t1),
+                      style: TextStyle(fontSize: 14, color: AppColors.t1),
                       decoration: InputDecoration(
                         hintText: '192.168.0.14',
-                        hintStyle: TextStyle(color: AppColors.t3, fontSize: 13, fontFamily: 'monospace'),
+                        hintStyle: TextStyle(color: AppColors.t3, fontSize: 13),
                         filled: true, fillColor: AppColors.bg,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
@@ -611,85 +521,176 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
                     ),
-                    child: const Text('연결', style: TextStyle(fontSize: 13, fontFamily: 'monospace', fontWeight: FontWeight.w700)),
+                    child: const Text('연결', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   ),
                 ]),
-              ]),
+              ),
+            // 연결된 경우 연결 해제 / 공장 초기화
+            if (_isConnected) ...[
+              _divider(),
+              _row(
+                iconBg: AppColors.gold,
+                icon: Icons.restart_alt_rounded,
+                title: '공장 초기화',
+                subtitle: '모든 설정을 초기값으로 되돌립니다',
+                trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
+                onTap: _showFactoryResetDialog,
+              ),
+              _divider(),
+              _row(
+                iconBg: AppColors.red,
+                icon: Icons.link_off_rounded,
+                title: '연결 해제',
+                titleColor: AppColors.red,
+                trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
+                onTap: _disconnectDevice,
+              ),
             ],
-          ])),
-        const SizedBox(height: 12),
-        Text('Persona Frame v1.0.0 · 2026', style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: AppColors.t3, letterSpacing: 2)),
-        const SizedBox(height: 20),
-      ]))),
+            _divider(),
+            _row(
+              iconBg: const Color(0xFF6B5CE7),
+              icon: Icons.info_outline_rounded,
+              title: '버전 정보',
+              subtitle: 'Persona Frame v1.0.0 · 2026',
+              trailing: const SizedBox.shrink(),
+            ),
+            _divider(),
+            // 로그아웃 (빨간색)
+            _row(
+              iconBg: AppColors.red.withValues(alpha: 0.15),
+              icon: Icons.logout_rounded,
+              title: '로그아웃',
+              titleColor: AppColors.red,
+              trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.red.withValues(alpha: 0.5)),
+              onTap: widget.onLogout,
+            ),
+          ]),
+          const SizedBox(height: 20),
+        ]),
+      )),
     ]);
   }
 
-  Widget _timeBox(String label, String value, VoidCallback onTap) {
+  // ── 헬퍼 위젯들 ─────────────────────────────────────────────────────────────
+
+  Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(text,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.t3, letterSpacing: 0.5)),
+    );
+  }
+
+  Widget _card(List<Widget> children) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.panel,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: children),
+    );
+  }
+
+  Widget _divider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Divider(height: 1, color: AppColors.border),
+    );
+  }
+
+  Widget _row({
+    required Color iconBg,
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Color? titleColor,
+    required Widget trailing,
+    VoidCallback? onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(children: [
+          Container(
+            width: 32, height: 32,
+            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, size: 17, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: titleColor ?? AppColors.t1)),
+            if (subtitle != null) ...[
+              const SizedBox(height: 2),
+              Text(subtitle, style: TextStyle(fontSize: 11, color: AppColors.t3)),
+            ],
+          ])),
+          trailing,
+        ]),
+      ),
+    );
+  }
+
+  Widget _sleepPill(String label, String time, VoidCallback onTap) {
     return Expanded(child: GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.border)),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.accent.withValues(alpha: 0.20)),
+        ),
         child: Column(children: [
-          Text(label, style: TextStyle(fontSize: 8, fontFamily: 'monospace', color: AppColors.t3, letterSpacing: 1.5)),
-          const SizedBox(height: 5),
-          Text(value, style: TextStyle(fontSize: 20, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.t1, letterSpacing: -1)),
-          const SizedBox(height: 3),
-          Text('탭하여 변경', style: TextStyle(fontSize: 7, fontFamily: 'monospace', color: AppColors.t3)),
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.t3)),
+          const SizedBox(height: 4),
+          Text(time, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.accent, letterSpacing: -0.5)),
+          const SizedBox(height: 2),
+          Text('탭하여 변경', style: TextStyle(fontSize: 9, color: AppColors.t3)),
         ]),
       ),
     ));
   }
 
-  Widget _alertRow(IconData icon, String title, String sub, bool val, ValueChanged<bool> onChanged) {
-    return Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Row(children: [
-      Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.accent2, borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, size: 18, color: AppColors.accent)),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.t1)),
-        const SizedBox(height: 3),
-        Text(sub, style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.t3)),
-      ])),
-      Switch(value: val, onChanged: onChanged, activeColor: AppColors.accent),
-    ]));
-  }
-
-  Widget _btn(String text, Color color, Color borderColor, [VoidCallback? onPressed]) {
-    return SizedBox(width: double.infinity, child: OutlinedButton(
-      onPressed: onPressed ?? () {},
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 12), side: BorderSide(color: borderColor),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-      child: Text(text, style: TextStyle(fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: color, letterSpacing: 1.5)),
-    ));
-  }
-
-  Widget _sliderRow({required IconData icon, required String label, required double value, required Color color, required ValueChanged<double> onChanged}) {
-    return Row(children: [
-      Container(width: 34, height: 34,
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-        child: Icon(icon, size: 17, color: color)),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.t1)),
-          Text('${(value * 100).round()}%', style: TextStyle(fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: color)),
-        ]),
-        const SizedBox(height: 4),
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            trackHeight: 4,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-            activeTrackColor: color,
-            inactiveTrackColor: color.withValues(alpha: 0.15),
-            thumbColor: color,
-            overlayColor: color.withValues(alpha: 0.15),
-          ),
-          child: Slider(value: value, min: 0, max: 1, onChanged: onChanged),
+  Widget _sliderRow({
+    required Color iconBg,
+    required IconData icon,
+    required String label,
+    required double value,
+    required Color color,
+    required ValueChanged<double> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(children: [
+        Container(
+          width: 32, height: 32,
+          decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, size: 17, color: Colors.white),
         ),
-      ])),
-    ]);
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.t1)),
+            Text('${(value * 100).round()}%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          ]),
+          const SizedBox(height: 4),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+              activeTrackColor: color,
+              inactiveTrackColor: color.withValues(alpha: 0.12),
+              thumbColor: color,
+              overlayColor: color.withValues(alpha: 0.12),
+            ),
+            child: Slider(value: value, min: 0, max: 1, onChanged: onChanged),
+          ),
+        ])),
+      ]),
+    );
   }
 }

@@ -15,7 +15,7 @@ class PersonaFrameApp extends StatefulWidget {
 
 class _PersonaFrameAppState extends State<PersonaFrameApp> {
   bool _isDark = false;
-  String _aiName = '퍼비';
+  String _aiName = '신준수';
   bool _loggedIn = false;
 
   @override
