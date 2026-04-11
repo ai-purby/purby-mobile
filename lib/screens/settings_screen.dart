@@ -6,6 +6,7 @@ import '../app_colors.dart';
 class SettingsScreen extends StatefulWidget {
   final bool isDark;
   final String aiName;
+  final String email;
   final ValueChanged<bool> onDarkToggle;
   final ValueChanged<String> onNameChange;
   final VoidCallback onLogout;
@@ -13,6 +14,7 @@ class SettingsScreen extends StatefulWidget {
     super.key,
     required this.isDark,
     required this.aiName,
+    required this.email,
     required this.onDarkToggle,
     required this.onNameChange,
     required this.onLogout,
@@ -44,38 +46,41 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadBriefing() async {
     final prefs = await SharedPreferences.getInstance();
+    final e = widget.email;
     setState(() {
-      _briefingEnabled = prefs.getBool('briefing_enabled') ?? false;
+      _briefingEnabled = prefs.getBool('${e}_briefing_enabled') ?? false;
       _briefingTime = TimeOfDay(
-        hour: prefs.getInt('briefing_hour') ?? 7,
-        minute: prefs.getInt('briefing_minute') ?? 0,
+        hour: prefs.getInt('${e}_briefing_hour') ?? 7,
+        minute: prefs.getInt('${e}_briefing_minute') ?? 0,
       );
-      _retroEnabled = prefs.getBool('retro_enabled') ?? false;
+      _retroEnabled = prefs.getBool('${e}_retro_enabled') ?? false;
       _retroTime = TimeOfDay(
-        hour: prefs.getInt('retro_hour') ?? 22,
-        minute: prefs.getInt('retro_minute') ?? 0,
+        hour: prefs.getInt('${e}_retro_hour') ?? 22,
+        minute: prefs.getInt('${e}_retro_minute') ?? 0,
       );
-      _volume = prefs.getDouble('volume') ?? 0.5;
-      _brightness = prefs.getDouble('brightness') ?? 0.8;
-      _personality = prefs.getString('personality') ?? '친근한';
-      _deviceIp = prefs.getString('device_ip') ?? '';
-      _isConnected = prefs.getBool('device_connected') ?? false;
+      _volume = prefs.getDouble('${e}_volume') ?? 0.5;
+      _brightness = prefs.getDouble('${e}_brightness') ?? 0.8;
+      _personality = prefs.getString('${e}_personality') ?? '친근한';
+      _deviceIp = prefs.getString('${e}_device_ip') ?? '';
+      _isConnected = prefs.getBool('${e}_device_connected') ?? false;
       if (_deviceIp.isNotEmpty) _ipCtrl.text = _deviceIp;
     });
   }
 
   Future<void> _saveBriefing() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('briefing_enabled', _briefingEnabled);
-    await prefs.setInt('briefing_hour', _briefingTime.hour);
-    await prefs.setInt('briefing_minute', _briefingTime.minute);
+    final e = widget.email;
+    await prefs.setBool('${e}_briefing_enabled', _briefingEnabled);
+    await prefs.setInt('${e}_briefing_hour', _briefingTime.hour);
+    await prefs.setInt('${e}_briefing_minute', _briefingTime.minute);
   }
 
   Future<void> _saveRetro() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('retro_enabled', _retroEnabled);
-    await prefs.setInt('retro_hour', _retroTime.hour);
-    await prefs.setInt('retro_minute', _retroTime.minute);
+    final e = widget.email;
+    await prefs.setBool('${e}_retro_enabled', _retroEnabled);
+    await prefs.setInt('${e}_retro_hour', _retroTime.hour);
+    await prefs.setInt('${e}_retro_minute', _retroTime.minute);
   }
 
   Future<void> _pickBriefingTime() async {
@@ -88,8 +93,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _saveDisplay() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setDouble('volume', _volume);
-    await prefs.setDouble('brightness', _brightness);
+    final e = widget.email;
+    await prefs.setDouble('${e}_volume', _volume);
+    await prefs.setDouble('${e}_brightness', _brightness);
   }
 
   void _showFactoryResetDialog() {
@@ -119,20 +125,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ip = _ipCtrl.text.trim();
     if (ip.isEmpty) return;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('device_ip', ip);
-    await prefs.setBool('device_connected', true);
+    final e = widget.email;
+    await prefs.setString('${e}_device_ip', ip);
+    await prefs.setBool('${e}_device_connected', true);
     setState(() { _deviceIp = ip; _isConnected = true; });
   }
 
   Future<void> _disconnectDevice() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('device_connected', false);
+    await prefs.setBool('${widget.email}_device_connected', false);
     setState(() => _isConnected = false);
   }
 
   Future<void> _savePersonality(String val) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('personality', val);
+    await prefs.setString('${widget.email}_personality', val);
     setState(() => _personality = val);
   }
 

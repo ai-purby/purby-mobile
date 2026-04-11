@@ -1,13 +1,12 @@
-import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server/gmail.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_colors.dart';
 
 // ─── Auth Screen (로그인 / 회원가입) ─────────────────────────────────────────
 class AuthScreen extends StatefulWidget {
-  final Function(bool autoLogin) onLogin;
+  final Function(bool autoLogin, String email) onLogin;
   const AuthScreen({super.key, required this.onLogin});
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -24,7 +23,6 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _sendingCode = false;
   bool _codeSent = false;
   bool _codeVerified = false;
-  String _sentCode = '';
   bool _autoLogin = false;
 
   @override
@@ -44,11 +42,6 @@ class _AuthScreenState extends State<AuthScreen> {
     setState(() => _autoLogin = val);
   }
 
-  static const _adminEmail = 'sin629370@gmail.com';
-  static const _adminPw = '0310';
-  // Gmail 앱 비밀번호 (Google 계정 → 보안 → 앱 비밀번호)
-  static const _senderAppPw = 'YOUR_GMAIL_APP_PASSWORD';
-
   Future<void> _sendVerifyCode() async {
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
@@ -57,35 +50,53 @@ class _AuthScreenState extends State<AuthScreen> {
     }
     setState(() { _sendingCode = true; _error = ''; });
 
-    final code = (100000 + Random().nextInt(900000)).toString();
     try {
-      final smtp = gmail(_adminEmail, _senderAppPw);
-      final msg = Message()
-        ..from = Address(_adminEmail, 'Persona Frame')
-        ..recipients.add(email)
-        ..subject = '[Persona Frame] 이메일 인증번호'
-        ..text = '인증번호: $code\n\n이 코드는 10분간 유효합니다.';
-      await send(msg, smtp);
-      setState(() { _sentCode = code; _codeSent = true; _sendingCode = false; });
-    } catch (_) {
-      setState(() { _error = '이메일 전송에 실패했습니다. 앱 비밀번호를 확인해주세요.'; _sendingCode = false; });
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/auth/send-code'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      if (response.statusCode == 200) {
+        setState(() { _codeSent = true; _sendingCode = false; });
+      } else {
+        setState(() { _error = '이메일 전송에 실패했습니다.'; _sendingCode = false; });
+      }
+    } catch (e) {
+      setState(() { _error = '서버 연결에 실패했습니다.'; _sendingCode = false; });
     }
   }
 
-  void _verifyCode() {
-    if (_codeCtrl.text.trim() == _sentCode) {
-      setState(() { _codeVerified = true; _error = ''; });
-    } else {
-      setState(() => _error = '인증번호가 올바르지 않습니다.');
+  Future<void> _verifyCode() async {
+    final email = _emailCtrl.text.trim();
+    final code = _codeCtrl.text.trim();
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:8000/auth/verify-code'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'code': code}),
+      );
+      if (response.statusCode == 200) {
+        setState(() { _codeVerified = true; _error = ''; });
+      } else {
+        setState(() => _error = '인증번호가 올바르지 않습니다.');
+      }
+    } catch (e) {
+      setState(() => _error = '서버 연결에 실패했습니다.');
     }
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     final email = _emailCtrl.text.trim();
     final pw = _pwCtrl.text;
+    final prefs = await SharedPreferences.getInstance();
+
     if (_isLogin) {
-      if (email == _adminEmail && pw == _adminPw) {
-        widget.onLogin(_autoLogin);
+      // 저장된 계정 확인
+      final usersJson = prefs.getString('users') ?? '{}';
+      final users = Map<String, String>.from(jsonDecode(usersJson));
+      if (users.containsKey(email) && users[email] == pw) {
+        widget.onLogin(_autoLogin, email);
       } else {
         setState(() => _error = '이메일 또는 비밀번호가 올바르지 않습니다.');
       }
@@ -96,11 +107,36 @@ class _AuthScreenState extends State<AuthScreen> {
       }
       if (pw.isEmpty) {
         setState(() => _error = '비밀번호를 입력해주세요.');
-      } else if (pw != _pw2Ctrl.text) {
-        setState(() => _error = '비밀번호가 일치하지 않습니다.');
-      } else {
-        setState(() => _error = '관리자만 접근 가능합니다.');
+        return;
       }
+      if (pw != _pw2Ctrl.text) {
+        setState(() => _error = '비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      // 이미 가입된 이메일 확인
+      final usersJson = prefs.getString('users') ?? '{}';
+      final users = Map<String, String>.from(jsonDecode(usersJson));
+      if (users.containsKey(email)) {
+        setState(() => _error = '이미 가입된 이메일입니다.');
+        return;
+      }
+      // 계정 저장
+      users[email] = pw;
+      await prefs.setString('users', jsonEncode(users));
+      if (!mounted) return;
+      setState(() {
+        _error = '';
+        _isLogin = true;
+        _codeSent = false;
+        _codeVerified = false;
+        _emailCtrl.clear();
+        _pwCtrl.clear();
+        _pw2Ctrl.clear();
+        _codeCtrl.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
+      );
     }
   }
 
@@ -199,7 +235,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     const SizedBox(width: 10),
                     ElevatedButton(
-                      onPressed: _verifyCode,
+                      onPressed: () => _verifyCode(),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accent, foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -255,7 +291,7 @@ class _AuthScreenState extends State<AuthScreen> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _submit,
+                onPressed: () => _submit(),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.accent, foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),

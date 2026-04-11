@@ -11,6 +11,7 @@ import 'manual_screen.dart';
 class MainScreen extends StatefulWidget {
   final bool isDark;
   final String aiName;
+  final String email;
   final ValueChanged<bool> onDarkToggle;
   final ValueChanged<String> onNameChange;
   final VoidCallback onLogout;
@@ -18,6 +19,7 @@ class MainScreen extends StatefulWidget {
     super.key,
     required this.isDark,
     required this.aiName,
+    required this.email,
     required this.onDarkToggle,
     required this.onNameChange,
     required this.onLogout,
@@ -32,7 +34,7 @@ class _MainScreenState extends State<MainScreen> {
 
   String get _todayKey {
     final now = DateTime.now();
-    return 'schedules_${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    return '${widget.email}_schedules_${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -72,6 +74,7 @@ class _MainScreenState extends State<MainScreen> {
       HomeScreen(aiName: widget.aiName, schedules: _schedules),
       ScheduleScreen(
         schedules: _schedules,
+        email: widget.email,
         onSchedulesChanged: (updated) {
           setState(() {
             _schedules
@@ -85,6 +88,7 @@ class _MainScreenState extends State<MainScreen> {
       SettingsScreen(
         isDark: widget.isDark,
         aiName: widget.aiName,
+        email: widget.email,
         onDarkToggle: widget.onDarkToggle,
         onNameChange: widget.onNameChange,
         onLogout: widget.onLogout,
@@ -95,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
       backgroundColor: AppColors.bg,
       body: SafeArea(
         child: Column(children: [
-          Expanded(child: screens[_currentIndex]),
+          Expanded(child: IndexedStack(index: _currentIndex, children: screens)),
           // ── 하단 네비게이션
           Container(
             height: 72,

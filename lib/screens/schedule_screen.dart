@@ -8,7 +8,8 @@ import '../widgets/add_sheet.dart';
 class ScheduleScreen extends StatefulWidget {
   final List<Map<String, dynamic>> schedules;
   final void Function(List<Map<String, dynamic>>) onSchedulesChanged;
-  const ScheduleScreen({super.key, required this.schedules, required this.onSchedulesChanged});
+  final String email;
+  const ScheduleScreen({super.key, required this.schedules, required this.onSchedulesChanged, required this.email});
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
@@ -55,7 +56,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       _selectedDate.day == _today.day;
 
   String _keyFor(DateTime d) =>
-      'schedules_${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      '${widget.email}_schedules_${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
   Future<void> _loadForDate(DateTime date) async {
     final prefs = await SharedPreferences.getInstance();

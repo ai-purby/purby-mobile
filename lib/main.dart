@@ -15,8 +15,9 @@ class PersonaFrameApp extends StatefulWidget {
 
 class _PersonaFrameAppState extends State<PersonaFrameApp> {
   bool _isDark = false;
-  String _aiName = '신준수';
+  String _aiName = '';
   bool _loggedIn = false;
+  String _currentEmail = '';
 
   @override
   void initState() {
@@ -26,30 +27,42 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
 
   Future<void> _checkAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDark = prefs.getBool('is_dark') ?? false;
-      if (prefs.getBool('logged_in') ?? false) _loggedIn = true;
-    });
+    final email = prefs.getString('logged_in_email') ?? '';
+    if ((prefs.getBool('logged_in') ?? false) && email.isNotEmpty) {
+      setState(() {
+        _currentEmail = email;
+        _isDark = prefs.getBool('${email}_is_dark') ?? false;
+        _aiName = prefs.getString('${email}_ai_name') ?? '';
+        _loggedIn = true;
+      });
+    }
   }
 
   Future<void> _setDark(bool val) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_dark', val);
+    await prefs.setBool('${_currentEmail}_is_dark', val);
     setState(() => _isDark = val);
   }
 
-  Future<void> _login(bool autoLogin) async {
+  Future<void> _login(bool autoLogin, String email) async {
+    final prefs = await SharedPreferences.getInstance();
     if (autoLogin) {
-      final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('logged_in', true);
+      await prefs.setString('logged_in_email', email);
     }
-    setState(() => _loggedIn = true);
+    setState(() {
+      _currentEmail = email;
+      _isDark = prefs.getBool('${email}_is_dark') ?? false;
+      _aiName = prefs.getString('${email}_ai_name') ?? '';
+      _loggedIn = true;
+    });
   }
 
   Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('logged_in', false);
-    setState(() => _loggedIn = false);
+    await prefs.remove('logged_in_email');
+    setState(() { _loggedIn = false; _currentEmail = ''; _aiName = ''; });
   }
 
   @override
@@ -70,8 +83,13 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
           ? MainScreen(
               isDark: _isDark,
               aiName: _aiName,
+              email: _currentEmail,
               onDarkToggle: _setDark,
-              onNameChange: (n) => setState(() => _aiName = n),
+              onNameChange: (n) async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('${_currentEmail}_ai_name', n);
+                setState(() => _aiName = n);
+              },
               onLogout: _logout,
             )
           : AuthScreen(onLogin: _login),

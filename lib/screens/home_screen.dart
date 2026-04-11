@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 18),
               Text('안녕하세요! 👋', style: TextStyle(fontSize: 15, color: AppColors.t2, fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
-              Text('$aiName님!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.t1)),
+              Text(aiName.isEmpty ? '이름을 설정해주세요' : '$aiName님!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: aiName.isEmpty ? AppColors.t3 : AppColors.t1)),
             ]),
           ),
 
