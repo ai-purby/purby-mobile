@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_colors.dart';
 
@@ -7,6 +9,7 @@ class SettingsScreen extends StatefulWidget {
   final bool isDark;
   final String aiName;
   final String email;
+  final String token;
   final ValueChanged<bool> onDarkToggle;
   final ValueChanged<String> onNameChange;
   final VoidCallback onLogout;
@@ -15,6 +18,7 @@ class SettingsScreen extends StatefulWidget {
     required this.isDark,
     required this.aiName,
     required this.email,
+    required this.token,
     required this.onDarkToggle,
     required this.onNameChange,
     required this.onLogout,
@@ -41,61 +45,67 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadBriefing();
+    _loadSettings();
   }
 
-  Future<void> _loadBriefing() async {
+  TimeOfDay _parseTime(String t) {
+    final parts = t.split(':');
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  String _fmtForApi(TimeOfDay t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  Future<void> _patchSettings(Map<String, dynamic> updates) async {
+    try {
+      await http.patch(
+        Uri.parse('http://10.0.2.2:8000/settings'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${widget.token}'},
+        body: jsonEncode(updates),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _loadSettings() async {
+    // 디바이스 연결 정보는 SharedPreferences 유지 (API에 없음)
     final prefs = await SharedPreferences.getInstance();
     final e = widget.email;
     setState(() {
-      _briefingEnabled = prefs.getBool('${e}_briefing_enabled') ?? false;
-      _briefingTime = TimeOfDay(
-        hour: prefs.getInt('${e}_briefing_hour') ?? 7,
-        minute: prefs.getInt('${e}_briefing_minute') ?? 0,
-      );
-      _retroEnabled = prefs.getBool('${e}_retro_enabled') ?? false;
-      _retroTime = TimeOfDay(
-        hour: prefs.getInt('${e}_retro_hour') ?? 22,
-        minute: prefs.getInt('${e}_retro_minute') ?? 0,
-      );
-      _volume = prefs.getDouble('${e}_volume') ?? 0.5;
-      _brightness = prefs.getDouble('${e}_brightness') ?? 0.8;
-      _personality = prefs.getString('${e}_personality') ?? '친근한';
       _deviceIp = prefs.getString('${e}_device_ip') ?? '';
       _isConnected = prefs.getBool('${e}_device_connected') ?? false;
       if (_deviceIp.isNotEmpty) _ipCtrl.text = _deviceIp;
     });
-  }
 
-  Future<void> _saveBriefing() async {
-    final prefs = await SharedPreferences.getInstance();
-    final e = widget.email;
-    await prefs.setBool('${e}_briefing_enabled', _briefingEnabled);
-    await prefs.setInt('${e}_briefing_hour', _briefingTime.hour);
-    await prefs.setInt('${e}_briefing_minute', _briefingTime.minute);
-  }
-
-  Future<void> _saveRetro() async {
-    final prefs = await SharedPreferences.getInstance();
-    final e = widget.email;
-    await prefs.setBool('${e}_retro_enabled', _retroEnabled);
-    await prefs.setInt('${e}_retro_hour', _retroTime.hour);
-    await prefs.setInt('${e}_retro_minute', _retroTime.minute);
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8000/settings'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final s = body['settings'] as Map<String, dynamic>;
+        setState(() {
+          _personality     = s['personality']      as String? ?? '친근한';
+          sleepEnabled     = s['sleep_enabled']    as bool?   ?? true;
+          sleepStart       = _parseTime(s['sleep_start']    as String? ?? '02:00');
+          sleepEnd         = _parseTime(s['sleep_end']      as String? ?? '06:00');
+          _briefingEnabled = s['briefing_enabled'] as bool?   ?? false;
+          _briefingTime    = _parseTime(s['briefing_time']  as String? ?? '07:00');
+          _retroEnabled    = s['retro_enabled']    as bool?   ?? false;
+          _retroTime       = _parseTime(s['retro_time']     as String? ?? '22:00');
+          _volume          = (s['volume']          as num?)?.toDouble() ?? 0.5;
+          _brightness      = (s['brightness']      as num?)?.toDouble() ?? 0.8;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _pickBriefingTime() async {
     final picked = await showTimePicker(context: context, initialTime: _briefingTime);
     if (picked != null) {
       setState(() => _briefingTime = picked);
-      _saveBriefing();
+      _patchSettings({'briefing_enabled': _briefingEnabled, 'briefing_time': _fmtForApi(picked)});
     }
-  }
-
-  Future<void> _saveDisplay() async {
-    final prefs = await SharedPreferences.getInstance();
-    final e = widget.email;
-    await prefs.setDouble('${e}_volume', _volume);
-    await prefs.setDouble('${e}_brightness', _brightness);
   }
 
   void _showFactoryResetDialog() {
@@ -138,9 +148,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _savePersonality(String val) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('${widget.email}_personality', val);
     setState(() => _personality = val);
+    _patchSettings({'personality': val});
   }
 
   static const _personalities = [
@@ -220,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final picked = await showTimePicker(context: context, initialTime: _retroTime);
     if (picked != null) {
       setState(() => _retroTime = picked);
-      _saveRetro();
+      _patchSettings({'retro_enabled': _retroEnabled, 'retro_time': _fmtForApi(picked)});
     }
   }
 
@@ -239,7 +248,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (ctx, child) => MediaQuery(
         data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: true), child: child!),
     );
-    if (p != null) setState(() => isStart ? sleepStart = p : sleepEnd = p);
+    if (p != null) {
+      setState(() => isStart ? sleepStart = p : sleepEnd = p);
+      _patchSettings({'sleep_start': _fmtForApi(sleepStart), 'sleep_end': _fmtForApi(sleepEnd)});
+    }
   }
 
   void _showNameDialog() {
@@ -270,7 +282,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('취소', style: TextStyle(color: AppColors.t3))),
           TextButton(
             onPressed: () {
-              if (ctrl.text.trim().isNotEmpty) widget.onNameChange(ctrl.text.trim());
+              if (ctrl.text.trim().isNotEmpty) {
+                widget.onNameChange(ctrl.text.trim());
+                _patchSettings({'ai_name': ctrl.text.trim()});
+              }
               Navigator.pop(ctx);
             },
             child: const Text('저장', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w700)),
@@ -355,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text('절전 시간', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.t1)),
                   Text('설정 시간에 액자가 절전으로 전환됩니다', style: TextStyle(fontSize: 11, color: AppColors.t3)),
                 ])),
-                Switch(value: sleepEnabled, onChanged: (v) => setState(() => sleepEnabled = v), activeColor: AppColors.accent),
+                Switch(value: sleepEnabled, onChanged: (v) { setState(() => sleepEnabled = v); _patchSettings({'sleep_enabled': v}); }, activeColor: AppColors.accent),
               ]),
             ),
             Padding(
@@ -376,7 +391,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: '오늘 일정을 요약해드려요',
               trailing: Switch(
                 value: _briefingEnabled,
-                onChanged: (v) { setState(() => _briefingEnabled = v); _saveBriefing(); },
+                onChanged: (v) { setState(() => _briefingEnabled = v); _patchSettings({'briefing_enabled': v, 'briefing_time': _fmtForApi(_briefingTime)}); },
                 activeColor: AppColors.accent,
               ),
             ),
@@ -409,7 +424,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: '하루를 돌아보는 알림을 드려요',
               trailing: Switch(
                 value: _retroEnabled,
-                onChanged: (v) { setState(() => _retroEnabled = v); _saveRetro(); },
+                onChanged: (v) { setState(() => _retroEnabled = v); _patchSettings({'retro_enabled': v, 'retro_time': _fmtForApi(_retroTime)}); },
                 activeColor: AppColors.accent,
               ),
             ),
@@ -458,7 +473,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               label: '볼륨',
               value: _volume,
               color: AppColors.accent,
-              onChanged: (v) { setState(() => _volume = v); _saveDisplay(); },
+              onChanged: (v) { setState(() => _volume = v); _patchSettings({'volume': v}); },
             ),
             _divider(),
             _sliderRow(
@@ -467,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               label: '밝기',
               value: _brightness,
               color: AppColors.gold,
-              onChanged: (v) { setState(() => _brightness = v); _saveDisplay(); },
+              onChanged: (v) { setState(() => _brightness = v); _patchSettings({'brightness': v}); },
             ),
             _divider(),
             _row(

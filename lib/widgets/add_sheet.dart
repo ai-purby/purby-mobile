@@ -58,6 +58,8 @@ class _AddSheetState extends State<AddSheet> {
                   'title': _titleCtrl.text.trim(),
                   'color': widget.colors[widget.colorCount % widget.colors.length],
                   'done': false,
+                  'startTime': _startTime,
+                  'endTime': _endTime,
                 });
                 Navigator.pop(context);
               },

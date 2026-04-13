@@ -18,6 +18,7 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
   String _aiName = '';
   bool _loggedIn = false;
   String _currentEmail = '';
+  String _token = '';
 
   @override
   void initState() {
@@ -28,9 +29,11 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
   Future<void> _checkAutoLogin() async {
     final prefs = await SharedPreferences.getInstance();
     final email = prefs.getString('logged_in_email') ?? '';
-    if ((prefs.getBool('logged_in') ?? false) && email.isNotEmpty) {
+    final token = prefs.getString('auth_token') ?? '';
+    if ((prefs.getBool('logged_in') ?? false) && email.isNotEmpty && token.isNotEmpty) {
       setState(() {
         _currentEmail = email;
+        _token = token;
         _isDark = prefs.getBool('${email}_is_dark') ?? false;
         _aiName = prefs.getString('${email}_ai_name') ?? '';
         _loggedIn = true;
@@ -44,14 +47,16 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
     setState(() => _isDark = val);
   }
 
-  Future<void> _login(bool autoLogin, String email) async {
+  Future<void> _login(bool autoLogin, String email, String token) async {
     final prefs = await SharedPreferences.getInstance();
     if (autoLogin) {
       await prefs.setBool('logged_in', true);
       await prefs.setString('logged_in_email', email);
+      await prefs.setString('auth_token', token);
     }
     setState(() {
       _currentEmail = email;
+      _token = token;
       _isDark = prefs.getBool('${email}_is_dark') ?? false;
       _aiName = prefs.getString('${email}_ai_name') ?? '';
       _loggedIn = true;
@@ -62,7 +67,8 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('logged_in', false);
     await prefs.remove('logged_in_email');
-    setState(() { _loggedIn = false; _currentEmail = ''; _aiName = ''; });
+    await prefs.remove('auth_token');
+    setState(() { _loggedIn = false; _currentEmail = ''; _aiName = ''; _token = ''; });
   }
 
   @override
@@ -84,6 +90,7 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
               isDark: _isDark,
               aiName: _aiName,
               email: _currentEmail,
+              token: _token,
               onDarkToggle: _setDark,
               onNameChange: (n) async {
                 final prefs = await SharedPreferences.getInstance();

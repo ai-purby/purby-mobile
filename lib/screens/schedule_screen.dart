@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../app_colors.dart';
 import '../widgets/add_sheet.dart';
 
@@ -9,7 +9,8 @@ class ScheduleScreen extends StatefulWidget {
   final List<Map<String, dynamic>> schedules;
   final void Function(List<Map<String, dynamic>>) onSchedulesChanged;
   final String email;
-  const ScheduleScreen({super.key, required this.schedules, required this.onSchedulesChanged, required this.email});
+  final String token;
+  const ScheduleScreen({super.key, required this.schedules, required this.onSchedulesChanged, required this.email, required this.token});
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
@@ -55,31 +56,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       _selectedDate.month == _today.month &&
       _selectedDate.day == _today.day;
 
-  String _keyFor(DateTime d) =>
-      '${widget.email}_schedules_${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
-
   Future<void> _loadForDate(DateTime date) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_keyFor(date));
-    final list = raw != null ? (jsonDecode(raw) as List) : <dynamic>[];
-    setState(() {
-      _dateSchedules = list.map((e) {
-        final m = Map<String, dynamic>.from(e as Map);
-        m['color'] = Color(m['color'] as int);
-        return m;
-      }).toList();
-    });
-  }
-
-  Future<void> _saveForDate() async {
-    final prefs = await SharedPreferences.getInstance();
-    final list = _dateSchedules.map((s) {
-      final m = Map<String, dynamic>.from(s);
-      m['color'] = (s['color'] as Color).value;
-      return m;
-    }).toList();
-    await prefs.setString(_keyFor(_selectedDate), jsonEncode(list));
-    if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
+    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    try {
+      final response = await http.get(
+        Uri.parse('http://10.0.2.2:8000/schedules?date=$dateStr'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final list = body['schedules'] as List;
+        setState(() {
+          _dateSchedules = list.asMap().entries.map((entry) {
+            final i = entry.key;
+            final e = entry.value as Map<String, dynamic>;
+            final startTime = DateTime.parse(e['start_time'] as String);
+            return {
+              'id': e['id'],
+              'time': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}',
+              'title': e['title'],
+              'color': _colors[i % _colors.length],
+              'done': e['is_done'] as bool,
+              'isNow': false,
+            };
+          }).toList();
+        });
+        if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
+      }
+    } catch (_) {}
   }
 
   void _selectDate(DateTime date) {
@@ -193,12 +197,38 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       builder: (ctx) => AddSheet(
         colorCount: _dateSchedules.length,
         colors: _colors,
-        onAdd: (entry) {
-          setState(() {
-            _dateSchedules.add(entry);
-            _dateSchedules.sort((a, b) => (a['time'] as String).compareTo(b['time'] as String));
-          });
-          _saveForDate();
+        onAdd: (entry) async {
+          final startTod = entry['startTime'] as TimeOfDay;
+          final endTod = entry['endTime'] as TimeOfDay;
+          final startDt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, startTod.hour, startTod.minute);
+          final endDt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, endTod.hour, endTod.minute);
+          try {
+            final response = await http.post(
+              Uri.parse('http://10.0.2.2:8000/schedules'),
+              headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${widget.token}'},
+              body: jsonEncode({
+                'title': entry['title'],
+                'start_time': startDt.toIso8601String(),
+                'end_time': endDt.toIso8601String(),
+              }),
+            );
+            if (response.statusCode == 200 || response.statusCode == 201) {
+              final body = jsonDecode(response.body);
+              final newEntry = {
+                'id': body['id'],
+                'time': entry['time'],
+                'title': entry['title'],
+                'color': entry['color'],
+                'done': false,
+                'isNow': false,
+              };
+              setState(() {
+                _dateSchedules.add(newEntry);
+                _dateSchedules.sort((a, b) => (a['time'] as String).compareTo(b['time'] as String));
+              });
+              if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
+            }
+          } catch (_) {}
         },
       ),
     );
@@ -354,14 +384,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ),
                     child: Icon(Icons.delete_rounded, color: AppColors.red),
                   ),
-                  onDismissed: (_) {
+                  onDismissed: (_) async {
                     setState(() => _dateSchedules.remove(s));
-                    _saveForDate();
+                    if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
+                    try {
+                      await http.delete(
+                        Uri.parse('http://10.0.2.2:8000/schedules/${s['id']}'),
+                        headers: {'Authorization': 'Bearer ${widget.token}'},
+                      );
+                    } catch (_) {}
                   },
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       setState(() => s['done'] = !(s['done'] as bool));
-                      _saveForDate();
+                      if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
+                      try {
+                        await http.patch(
+                          Uri.parse('http://10.0.2.2:8000/schedules/${s['id']}/done'),
+                          headers: {'Authorization': 'Bearer ${widget.token}'},
+                        );
+                      } catch (_) {
+                        setState(() => s['done'] = !(s['done'] as bool));
+                      }
                     },
                     child: _item(s['time'], s['title'], s['color'],
                         s['done'] ?? false, s['isNow'] ?? false),

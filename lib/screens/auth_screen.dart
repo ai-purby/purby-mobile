@@ -6,7 +6,7 @@ import '../app_colors.dart';
 
 // ─── Auth Screen (로그인 / 회원가입) ─────────────────────────────────────────
 class AuthScreen extends StatefulWidget {
-  final Function(bool autoLogin, String email) onLogin;
+  final Function(bool autoLogin, String email, String token) onLogin;
   const AuthScreen({super.key, required this.onLogin});
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -89,18 +89,28 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _submit() async {
     final email = _emailCtrl.text.trim();
     final pw = _pwCtrl.text;
-    final prefs = await SharedPreferences.getInstance();
 
     if (_isLogin) {
-      // 저장된 계정 확인
-      final usersJson = prefs.getString('users') ?? '{}';
-      final users = Map<String, String>.from(jsonDecode(usersJson));
-      if (users.containsKey(email) && users[email] == pw) {
-        widget.onLogin(_autoLogin, email);
-      } else {
-        setState(() => _error = '이메일 또는 비밀번호가 올바르지 않습니다.');
+      // 로그인 — 백엔드에서 확인
+      try {
+        final response = await http.post(
+          Uri.parse('http://10.0.2.2:8000/auth/login'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'password': pw}),
+        );
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body);
+          final token = body['access_token'] as String;
+          widget.onLogin(_autoLogin, email, token);
+        } else {
+          final body = jsonDecode(response.body);
+          setState(() => _error = body['detail'] ?? '이메일 또는 비밀번호가 올바르지 않습니다.');
+        }
+      } catch (e) {
+        setState(() => _error = '서버 연결에 실패했습니다.');
       }
     } else {
+      // 회원가입 — 유효성 검사
       if (!_codeVerified) {
         setState(() => _error = '이메일 인증을 완료해주세요.');
         return;
@@ -113,30 +123,36 @@ class _AuthScreenState extends State<AuthScreen> {
         setState(() => _error = '비밀번호가 일치하지 않습니다.');
         return;
       }
-      // 이미 가입된 이메일 확인
-      final usersJson = prefs.getString('users') ?? '{}';
-      final users = Map<String, String>.from(jsonDecode(usersJson));
-      if (users.containsKey(email)) {
-        setState(() => _error = '이미 가입된 이메일입니다.');
-        return;
+
+      // 회원가입 — 백엔드에 저장 (중복 체크 포함)
+      try {
+        final response = await http.post(
+          Uri.parse('http://10.0.2.2:8000/auth/register'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'password': pw}),
+        );
+        if (!mounted) return;
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          setState(() {
+            _error = '';
+            _isLogin = true;
+            _codeSent = false;
+            _codeVerified = false;
+            _emailCtrl.clear();
+            _pwCtrl.clear();
+            _pw2Ctrl.clear();
+            _codeCtrl.clear();
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
+          );
+        } else {
+          final body = jsonDecode(response.body);
+          setState(() => _error = body['detail'] ?? '회원가입에 실패했습니다.');
+        }
+      } catch (e) {
+        setState(() => _error = '서버 연결에 실패했습니다.');
       }
-      // 계정 저장
-      users[email] = pw;
-      await prefs.setString('users', jsonEncode(users));
-      if (!mounted) return;
-      setState(() {
-        _error = '';
-        _isLogin = true;
-        _codeSent = false;
-        _codeVerified = false;
-        _emailCtrl.clear();
-        _pwCtrl.clear();
-        _pw2Ctrl.clear();
-        _codeCtrl.clear();
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
-      );
     }
   }
 
