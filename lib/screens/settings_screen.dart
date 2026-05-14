@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../app_colors.dart';
+import 'qr_scan_screen.dart';
 
 // ─── SettingsScreen ───────────────────────────────────────────────────────────
 class SettingsScreen extends StatefulWidget {
@@ -40,7 +41,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _personality = '친근한';
   bool _isConnected = false;
   String _deviceIp = '';
-  final _ipCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -59,7 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _patchSettings(Map<String, dynamic> updates) async {
     try {
       await http.patch(
-        Uri.parse('http://10.0.2.2:8000/settings'),
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/settings'),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${widget.token}'},
         body: jsonEncode(updates),
       );
@@ -73,12 +73,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _deviceIp = prefs.getString('${e}_device_ip') ?? '';
       _isConnected = prefs.getBool('${e}_device_connected') ?? false;
-      if (_deviceIp.isNotEmpty) _ipCtrl.text = _deviceIp;
     });
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/settings'),
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/settings'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       if (response.statusCode == 200) {
@@ -131,14 +130,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _connectDevice() async {
-    final ip = _ipCtrl.text.trim();
-    if (ip.isEmpty) return;
-    final prefs = await SharedPreferences.getInstance();
-    final e = widget.email;
-    await prefs.setString('${e}_device_ip', ip);
-    await prefs.setBool('${e}_device_connected', true);
-    setState(() { _deviceIp = ip; _isConnected = true; });
+  Future<void> _openQrScan() async {
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QrScanScreen(
+          token: widget.token,
+          email: widget.email,
+          autoLogin: false,
+          onLinked: (_, __, ___) async {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool('${widget.email}_device_connected', true);
+            await prefs.setString('${widget.email}_device_ip', 'QR 연결됨');
+            if (!mounted) return;
+            setState(() { _isConnected = true; _deviceIp = 'QR 연결됨'; });
+            Navigator.of(context).pop();
+          },
+          onLogout: widget.onLogout,
+        ),
+      ),
+    );
   }
 
   Future<void> _disconnectDevice() async {
@@ -235,7 +246,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   void dispose() {
-    _ipCtrl.dispose();
     super.dispose();
   }
 
@@ -293,6 +303,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.panel,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(children: [
+          Icon(Icons.warning_amber_rounded, size: 20, color: AppColors.red),
+          const SizedBox(width: 8),
+          Text('계정 탈퇴', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.t1)),
+        ]),
+        content: Text('계정과 모든 데이터가 영구적으로 삭제됩니다.\n이 작업은 되돌릴 수 없습니다.', style: TextStyle(fontSize: 13, color: AppColors.t2, height: 1.6)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('취소', style: TextStyle(color: AppColors.t3))),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _deleteAccount();
+            },
+            child: Text('탈퇴', style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    try {
+      final response = await http.delete(
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/users/me'),
+        headers: {'Authorization': 'Bearer ${widget.token}'},
+      );
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        widget.onLogout();
+      }
+    } catch (_) {}
   }
 
   // ─────────────────────────── build ────────────────────────────────────────
@@ -467,31 +517,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ══ 디스플레이 섹션
           _sectionLabel('디스플레이'),
           _card([
-            _sliderRow(
-              iconBg: const Color(0xFF6B5CE7),
-              icon: Icons.volume_up_rounded,
-              label: '볼륨',
-              value: _volume,
-              color: AppColors.accent,
-              onChanged: (v) { setState(() => _volume = v); _patchSettings({'volume': v}); },
+            Opacity(
+              opacity: _isConnected ? 1.0 : 0.38,
+              child: _sliderRow(
+                iconBg: const Color(0xFF6B5CE7),
+                icon: Icons.volume_up_rounded,
+                label: '볼륨',
+                value: _volume,
+                color: AppColors.accent,
+                onChanged: _isConnected ? (v) { setState(() => _volume = v); _patchSettings({'volume': v}); } : null,
+              ),
             ),
             _divider(),
-            _sliderRow(
-              iconBg: AppColors.gold,
-              icon: Icons.brightness_6_rounded,
-              label: '밝기',
-              value: _brightness,
-              color: AppColors.gold,
-              onChanged: (v) { setState(() => _brightness = v); _patchSettings({'brightness': v}); },
+            Opacity(
+              opacity: _isConnected ? 1.0 : 0.38,
+              child: _sliderRow(
+                iconBg: AppColors.gold,
+                icon: Icons.brightness_6_rounded,
+                label: '밝기',
+                value: _brightness,
+                color: AppColors.gold,
+                onChanged: _isConnected ? (v) { setState(() => _brightness = v); _patchSettings({'brightness': v}); } : null,
+              ),
             ),
             _divider(),
-            _row(
-              iconBg: const Color(0xFF475569),
-              icon: Icons.monitor_rounded,
-              title: '화면 끄기',
-              subtitle: '액자 화면 즉시 끄기',
-              trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
-              onTap: () {},
+            Opacity(
+              opacity: _isConnected ? 1.0 : 0.38,
+              child: _row(
+                iconBg: const Color(0xFF475569),
+                icon: Icons.monitor_rounded,
+                title: '화면 끄기',
+                subtitle: _isConnected ? '액자 화면 즉시 끄기' : '디바이스 연결 후 사용 가능',
+                trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
+                onTap: () {
+                  if (!_isConnected) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('디바이스를 먼저 연결해주세요'),
+                        behavior: SnackBarBehavior.floating,
+                        backgroundColor: AppColors.panel,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
+                  }
+                },
+              ),
             ),
           ]),
           const SizedBox(height: 20),
@@ -513,39 +583,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     )
                   : Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.t3),
             ),
-            // IP 입력 (미연결 시)
+            // QR 스캔 버튼 (미연결 시)
             if (!_isConnected)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                child: Row(children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _ipCtrl,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      style: TextStyle(fontSize: 14, color: AppColors.t1),
-                      decoration: InputDecoration(
-                        hintText: '192.168.0.14',
-                        hintStyle: TextStyle(color: AppColors.t3, fontSize: 13),
-                        filled: true, fillColor: AppColors.bg,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: AppColors.border)),
-                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent, width: 1.5)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  ElevatedButton(
-                    onPressed: _connectDevice,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _openQrScan,
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                    label: const Text('QR 코드로 연결', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent, foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
                     ),
-                    child: const Text('연결', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                   ),
-                ]),
+                ),
               ),
             // 연결된 경우 연결 해제 / 공장 초기화
             if (_isConnected) ...[
@@ -577,7 +632,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               trailing: const SizedBox.shrink(),
             ),
             _divider(),
-            // 로그아웃 (빨간색)
+            // 로그아웃
             _row(
               iconBg: AppColors.red.withValues(alpha: 0.15),
               icon: Icons.logout_rounded,
@@ -585,6 +640,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               titleColor: AppColors.red,
               trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.red.withValues(alpha: 0.5)),
               onTap: widget.onLogout,
+            ),
+            _divider(),
+            // 계정 탈퇴
+            _row(
+              iconBg: AppColors.red.withValues(alpha: 0.08),
+              icon: Icons.person_remove_rounded,
+              title: '계정 탈퇴',
+              titleColor: AppColors.red,
+              trailing: Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.red.withValues(alpha: 0.5)),
+              onTap: _showDeleteAccountDialog,
             ),
           ]),
           const SizedBox(height: 20),
@@ -682,7 +747,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String label,
     required double value,
     required Color color,
-    required ValueChanged<double> onChanged,
+    required ValueChanged<double>? onChanged,
   }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),

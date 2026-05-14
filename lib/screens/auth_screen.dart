@@ -6,7 +6,7 @@ import '../app_colors.dart';
 
 // ─── Auth Screen (로그인 / 회원가입) ─────────────────────────────────────────
 class AuthScreen extends StatefulWidget {
-  final Function(bool autoLogin, String email, String token) onLogin;
+  final Function(bool autoLogin, String email, String token, {bool isNew}) onLogin;
   const AuthScreen({super.key, required this.onLogin});
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -52,7 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/auth/send-code'),
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/auth/send-code'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
@@ -72,7 +72,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/auth/verify-code'),
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/auth/verify-code'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'code': code}),
       );
@@ -94,14 +94,14 @@ class _AuthScreenState extends State<AuthScreen> {
       // 로그인 — 백엔드에서 확인
       try {
         final response = await http.post(
-          Uri.parse('http://10.0.2.2:8000/auth/login'),
+          Uri.parse('https://primarily-example-thicken.ngrok-free.dev/auth/login'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'email': email, 'password': pw}),
         );
         if (response.statusCode == 200) {
           final body = jsonDecode(response.body);
           final token = body['access_token'] as String;
-          widget.onLogin(_autoLogin, email, token);
+          widget.onLogin(_autoLogin, email, token, isNew: false);
         } else {
           final body = jsonDecode(response.body);
           setState(() => _error = body['detail'] ?? '이메일 또는 비밀번호가 올바르지 않습니다.');
@@ -127,25 +127,15 @@ class _AuthScreenState extends State<AuthScreen> {
       // 회원가입 — 백엔드에 저장 (중복 체크 포함)
       try {
         final response = await http.post(
-          Uri.parse('http://10.0.2.2:8000/auth/register'),
+          Uri.parse('https://primarily-example-thicken.ngrok-free.dev/auth/register'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'email': email, 'password': pw}),
         );
         if (!mounted) return;
         if (response.statusCode == 200 || response.statusCode == 201) {
-          setState(() {
-            _error = '';
-            _isLogin = true;
-            _codeSent = false;
-            _codeVerified = false;
-            _emailCtrl.clear();
-            _pwCtrl.clear();
-            _pw2Ctrl.clear();
-            _codeCtrl.clear();
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('회원가입이 완료되었습니다. 로그인해주세요.')),
-          );
+          final body = jsonDecode(response.body);
+          final token = body['access_token'] as String;
+          widget.onLogin(_autoLogin, email, token, isNew: true);
         } else {
           final body = jsonDecode(response.body);
           setState(() => _error = body['detail'] ?? '회원가입에 실패했습니다.');
@@ -184,7 +174,7 @@ class _AuthScreenState extends State<AuthScreen> {
               child: const Icon(Icons.window_rounded, size: 32, color: AppColors.accent),
             ),
             const SizedBox(height: 16),
-            const Text('Persona Frame', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFamily: 'monospace', color: AppColors.accent, letterSpacing: 1)),
+            const Text('Purby', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, fontFamily: 'monospace', color: AppColors.accent, letterSpacing: 1)),
             const SizedBox(height: 6),
             Text('스마트 액자 컨트롤 앱', style: TextStyle(fontSize: 11, fontFamily: 'monospace', color: AppColors.t3, letterSpacing: 2)),
             const SizedBox(height: 48),

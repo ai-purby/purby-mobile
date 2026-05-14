@@ -60,7 +60,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/schedules?date=$dateStr'),
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/schedules?date=$dateStr'),
         headers: {'Authorization': 'Bearer ${widget.token}'},
       );
       if (response.statusCode == 200) {
@@ -204,7 +204,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           final endDt = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day, endTod.hour, endTod.minute);
           try {
             final response = await http.post(
-              Uri.parse('http://10.0.2.2:8000/schedules'),
+              Uri.parse('https://primarily-example-thicken.ngrok-free.dev/schedules'),
               headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer ${widget.token}'},
               body: jsonEncode({
                 'title': entry['title'],
@@ -389,7 +389,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
                     try {
                       await http.delete(
-                        Uri.parse('http://10.0.2.2:8000/schedules/${s['id']}'),
+                        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/schedules/${s['id']}'),
                         headers: {'Authorization': 'Bearer ${widget.token}'},
                       );
                     } catch (_) {}
@@ -400,7 +400,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       if (_isToday) widget.onSchedulesChanged(List.from(_dateSchedules));
                       try {
                         await http.patch(
-                          Uri.parse('http://10.0.2.2:8000/schedules/${s['id']}/done'),
+                          Uri.parse('https://primarily-example-thicken.ngrok-free.dev/schedules/${s['id']}/done'),
                           headers: {'Authorization': 'Bearer ${widget.token}'},
                         );
                       } catch (_) {

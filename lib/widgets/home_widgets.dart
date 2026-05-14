@@ -20,37 +20,52 @@ class QuickActionsCard extends StatelessWidget {
         GridView.count(
           crossAxisCount: 2, shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.6,
+          mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.3,
           children: [
-            _tile(Icons.music_note_rounded,   '음악 재생',  '버튼 탭 → 액자에 재생', const Color(0xFF6B5CE7)),
-            _tile(Icons.timer_rounded,         '타이머 설정', '뽀모도로 25분 시작',   const Color(0xFF2A9C70)),
-            _tile(Icons.people_rounded,        '일과 회고',  'AI 요약 받기',         const Color(0xFFA07828)),
-            _tile(Icons.power_settings_new_rounded, '절전 모드', '액자 즉시 절전',   const Color(0xFF94A3B8)),
+            _tile(context, Icons.music_note_rounded,   '음악 재생',  '버튼 탭 → 액자에 재생', const Color(0xFF6B5CE7)),
+            _tile(context, Icons.timer_rounded,         '타이머 설정', '뽀모도로 25분 시작',   const Color(0xFF2A9C70)),
+            _tile(context, Icons.people_rounded,        '일과 회고',  'AI 요약 받기',         const Color(0xFFA07828)),
+            _tile(context, Icons.power_settings_new_rounded, '절전 모드', '액자 즉시 절전',   const Color(0xFF94A3B8)),
           ],
         ),
       ]),
     );
   }
 
-  static Widget _tile(IconData icon, String title, String sub, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+  static Widget _tile(BuildContext context, IconData icon, String title, String sub, Color color) {
+    return Material(
+      color: color.withValues(alpha: 0.06),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.15)),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 28, height: 28,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, size: 15, color: color),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('$title 기능은 준비 중입니다'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.panel,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 2),
+          ));
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.15)),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 28, height: 28,
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, size: 15, color: color),
+            ),
+            const Spacer(),
+            Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.t1)),
+            const SizedBox(height: 2),
+            Text(sub, style: TextStyle(fontSize: 9, color: AppColors.t3)),
+          ]),
         ),
-        const Spacer(),
-        Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.t1)),
-        const SizedBox(height: 2),
-        Text(sub, style: TextStyle(fontSize: 9, color: AppColors.t3)),
-      ]),
+      ),
     );
   }
 }

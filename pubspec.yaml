@@ -35,6 +35,8 @@ dependencies:
   http: ^1.2.0
   mailer: ^6.1.0
   shared_preferences: ^2.3.0
+  mobile_scanner: ^6.0.0
+  permission_handler: ^11.3.0
 
 dev_dependencies:
   flutter_test:

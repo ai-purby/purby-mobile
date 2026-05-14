@@ -6,7 +6,8 @@ import '../widgets/home_widgets.dart';
 class HomeScreen extends StatelessWidget {
   final String aiName;
   final List<Map<String, dynamic>> schedules;
-  const HomeScreen({super.key, required this.aiName, required this.schedules});
+  final bool isConnected;
+  const HomeScreen({super.key, required this.aiName, required this.schedules, required this.isConnected});
 
   @override
   Widget build(BuildContext context) {
@@ -18,22 +19,28 @@ class HomeScreen extends StatelessWidget {
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('홈', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.t1)),
             const SizedBox(height: 2),
-            Text('Persona Frame', style: TextStyle(fontSize: 12, color: AppColors.t3)),
+            Text('Purby', style: TextStyle(fontSize: 12, color: AppColors.t3)),
           ]),
           // 디바이스 연결 상태 pill
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.green.withValues(alpha: 0.10),
+              color: (isConnected ? AppColors.green : AppColors.t3).withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.green.withValues(alpha: 0.25)),
+              border: Border.all(color: (isConnected ? AppColors.green : AppColors.t3).withValues(alpha: 0.25)),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Container(width: 7, height: 7,
-                decoration: BoxDecoration(color: AppColors.green, shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: 0.5), blurRadius: 4)])),
+                decoration: BoxDecoration(
+                  color: isConnected ? AppColors.green : AppColors.t3,
+                  shape: BoxShape.circle,
+                  boxShadow: isConnected ? [BoxShadow(color: AppColors.green.withValues(alpha: 0.5), blurRadius: 4)] : null,
+                )),
               const SizedBox(width: 6),
-              Text('디바이스 연결됨', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.green)),
+              Text(
+                isConnected ? '디바이스 연결됨' : '디바이스 미연결',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isConnected ? AppColors.green : AppColors.t3),
+              ),
             ]),
           ),
         ]),
@@ -67,7 +74,7 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 18),
               Text('안녕하세요! 👋', style: TextStyle(fontSize: 15, color: AppColors.t2, fontWeight: FontWeight.w500)),
               const SizedBox(height: 4),
-              Text(aiName.isEmpty ? '이름을 설정해주세요' : '$aiName님!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: aiName.isEmpty ? AppColors.t3 : AppColors.t1)),
+              Text('${aiName.isNotEmpty ? aiName : '사용자'}님!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.t1)),
             ]),
           ),
 

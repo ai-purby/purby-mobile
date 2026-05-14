@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_colors.dart';
 import 'screens/auth_screen.dart';
 import 'screens/main_screen.dart';
+import 'screens/qr_scan_screen.dart';
 
 void main() => runApp(const PersonaFrameApp());
 
@@ -17,6 +18,8 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
   bool _isDark = false;
   String _aiName = '';
   bool _loggedIn = false;
+  bool _deviceLinked = false;
+  bool _autoLogin = false;
   String _currentEmail = '';
   String _token = '';
 
@@ -37,6 +40,8 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
         _isDark = prefs.getBool('${email}_is_dark') ?? false;
         _aiName = prefs.getString('${email}_ai_name') ?? '';
         _loggedIn = true;
+        _deviceLinked = prefs.getBool('${email}_device_linked') ?? false;
+        _autoLogin = true;
       });
     }
   }
@@ -47,20 +52,29 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
     setState(() => _isDark = val);
   }
 
-  Future<void> _login(bool autoLogin, String email, String token) async {
+  Future<void> _login(bool autoLogin, String email, String token, {bool isNew = false}) async {
     final prefs = await SharedPreferences.getInstance();
     if (autoLogin) {
       await prefs.setBool('logged_in', true);
       await prefs.setString('logged_in_email', email);
       await prefs.setString('auth_token', token);
     }
+    final linked = isNew ? false : true;
     setState(() {
       _currentEmail = email;
       _token = token;
+      _autoLogin = autoLogin;
       _isDark = prefs.getBool('${email}_is_dark') ?? false;
       _aiName = prefs.getString('${email}_ai_name') ?? '';
       _loggedIn = true;
+      _deviceLinked = linked;
     });
+  }
+
+  Future<void> _onDeviceLinked(bool autoLogin, String email, String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('${email}_device_linked', true);
+    setState(() { _deviceLinked = true; });
   }
 
   Future<void> _logout() async {
@@ -85,21 +99,29 @@ class _PersonaFrameAppState extends State<PersonaFrameApp> {
           brightness: _isDark ? Brightness.dark : Brightness.light,
         ),
       ),
-      home: _loggedIn
-          ? MainScreen(
-              isDark: _isDark,
-              aiName: _aiName,
-              email: _currentEmail,
-              token: _token,
-              onDarkToggle: _setDark,
-              onNameChange: (n) async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setString('${_currentEmail}_ai_name', n);
-                setState(() => _aiName = n);
-              },
-              onLogout: _logout,
-            )
-          : AuthScreen(onLogin: _login),
+      home: !_loggedIn
+          ? AuthScreen(onLogin: _login)
+          : !_deviceLinked
+              ? QrScanScreen(
+                  token: _token,
+                  email: _currentEmail,
+                  autoLogin: _autoLogin,
+                  onLinked: _onDeviceLinked,
+                  onLogout: _logout,
+                )
+              : MainScreen(
+                  isDark: _isDark,
+                  aiName: _aiName,
+                  email: _currentEmail,
+                  token: _token,
+                  onDarkToggle: _setDark,
+                  onNameChange: (n) async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('${_currentEmail}_ai_name', n);
+                    setState(() => _aiName = n);
+                  },
+                  onLogout: _logout,
+                ),
     );
   }
 }
