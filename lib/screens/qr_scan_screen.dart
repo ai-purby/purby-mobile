@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -55,18 +57,82 @@ class _QrScanScreenState extends State<QrScanScreen> {
     }
   }
 
-  Future<void> _linkDevice(String deviceId) async {
-    if (_processing || deviceId.trim().isEmpty) return;
-    setState(() { _processing = true; _error = ''; });
+  Future<Map<String, String>> _getMobileDeviceInfo() async {
+    final info = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      final android = await info.androidInfo;
+      return {
+        'mobile_os': 'Android',
+        'mobile_os_version': android.version.release,
+        'mobile_model': '${android.manufacturer} ${android.model}',
+        'mobile_device_name': android.model,
+      };
+    } else if (Platform.isIOS) {
+      final ios = await info.iosInfo;
+      return {
+        'mobile_os': 'iOS',
+        'mobile_os_version': ios.systemVersion,
+        'mobile_model': ios.utsname.machine,
+        'mobile_device_name': ios.name,
+      };
+    }
+    return {};
+  }
 
+  Future<void> _linkDeviceByCode(String pairingCode) async {
+    if (_processing || pairingCode.isEmpty) return;
+    setState(() { _processing = true; _error = ''; });
     try {
       final response = await http.post(
-        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/devices/link'),
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/api/devices/link'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.token}',
         },
-        body: jsonEncode({'desktop_device_id': deviceId.trim()}),
+        body: jsonEncode({'pairing_code': pairingCode}),
+      );
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        widget.onLinked(widget.autoLogin, widget.email, widget.token);
+      } else {
+        final body = jsonDecode(response.body);
+        setState(() { _error = body['detail'] ?? '기기 연결에 실패했습니다.'; _processing = false; });
+      }
+    } catch (e) {
+      setState(() { _error = '서버 연결에 실패했습니다.'; _processing = false; });
+    }
+  }
+
+  String? _parsePairingCode(String qrValue) {
+    const prefix = 'purby://pairingcode/';
+    final trimmed = qrValue.trim();
+    if (trimmed.startsWith(prefix)) {
+      final code = trimmed.substring(prefix.length).trim();
+      return code.isNotEmpty ? code : null;
+    }
+    return null;
+  }
+
+  Future<void> _linkDevice(String qrValue) async {
+    final pairingCode = _parsePairingCode(qrValue);
+    if (_processing || pairingCode == null) {
+      if (pairingCode == null) setState(() { _error = '유효한 PURBY QR 코드가 아닙니다.'; });
+      return;
+    }
+    setState(() { _processing = true; _error = ''; });
+
+    try {
+      final mobileInfo = kIsWeb ? <String, String>{} : await _getMobileDeviceInfo();
+      final response = await http.post(
+        Uri.parse('https://primarily-example-thicken.ngrok-free.dev/api/devices/link'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+        body: jsonEncode({
+          'pairing_code': pairingCode,
+          ...mobileInfo,
+        }),
       );
 
       if (!mounted) return;
@@ -117,7 +183,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
         children: [
           const Icon(Icons.devices_rounded, size: 56, color: AppColors.accent),
           const SizedBox(height: 24),
-          Text('PURBY 기기 ID를 입력해주세요',
+          Text('PURBY 기기의 페어링 코드를 입력해주세요',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, fontFamily: 'monospace', fontWeight: FontWeight.w700, color: AppColors.t1),
           ),
@@ -126,7 +192,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
             controller: _deviceIdCtrl,
             style: TextStyle(fontSize: 13, color: AppColors.t1, fontFamily: 'monospace'),
             decoration: InputDecoration(
-              hintText: '기기 ID 입력',
+              hintText: 'XXXX-XXXX',
               hintStyle: TextStyle(color: AppColors.t3, fontSize: 13),
               filled: true, fillColor: AppColors.panel,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -136,7 +202,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          _connectButton(() => _linkDevice(_deviceIdCtrl.text)),
+          _connectButton(() => _linkDeviceByCode(_deviceIdCtrl.text.trim())),
           _errorBox(),
           const SizedBox(height: 12),
           TextButton(
